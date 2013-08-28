@@ -111,8 +111,8 @@ class ImageHeaderTable:
 		bin_file.seekTo(0x8c0) # spec say 0x8a0, but it is not true
 
 		try:
-			self.version = bin_file.readWord() # spec say it should be 0x01010000 but it is 0x10100000
-			if self.version != 0x10100000:
+			self.version = bin_file.readWord()
+			if self.version != 0x01010000:
 				raise ValueError("This is not a ImageHeaderTable")
 
 			self.count_image_headers	   = bin_file.readWord()
