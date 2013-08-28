@@ -40,7 +40,7 @@
 import struct
 import sys
 
-class Image:
+class BinaryFile:
 
 	def __init__(self, filename):
 		self.fp = open(filename, "rb")
@@ -64,31 +64,30 @@ class Image:
 	def seekTo(self, offset):
 		self.fp.seek(offset, 0)
 
-class RBLHeader:
+class BootROMHeader:
 
-	def __init__(self, image):		
-		self.image = image
-		self.interrupts 		= self.image.readWords(8)
-		self.width_detection 	= self.image.readWord()
-		self.image_id			= self.image.readWord()
-		self.encryption_status  = self.image.readWord()
-		self.user_defined       = self.image.readWord()
-		self.source_offset		= self.image.readWord()
-		self.length_of_image	= self.image.readWord()
-		self.reserved_1			= self.image.readWord()
-		self.start_of_execution = self.image.readWord()
-		self.total_image_length = self.image.readWord()
-		self.reserved_2			= self.image.readWord()
-		self.header_checksum	= self.image.readWord()
-		self.image.seekTo(0x0a0)
+	def __init__(self, bin_file):		
+		self.interrupts 		= bin_file.readWords(8)
+		self.width_detection 	= bin_file.readWord()
+		self.image_id			= bin_file.readWord()
+		self.encryption_status  = bin_file.readWord()
+		self.user_defined       = bin_file.readWord()
+		self.source_offset		= bin_file.readWord()
+		self.length_of_image	= bin_file.readWord()
+		self.reserved_1			= bin_file.readWord()
+		self.start_of_execution = bin_file.readWord()
+		self.total_image_length = bin_file.readWord()
+		self.reserved_2			= bin_file.readWord()
+		self.header_checksum	= bin_file.readWord()
+		bin_file.seekTo(0x0a0)
 
 		self.registers = []
 
 		for i in range(256):
-			self.registers.append((self.image.readWord(), self.image.readWord()))
+			self.registers.append((bin_file.readWord(), bin_file.readWord()))
 
 	def __str__(self):
-		s = ""
+		s = "<BootROMHeader>\n"
 		s += "%s: %x %x %x %x %x %x %x %x\n" % ("Reserved for Interrupts", 
 			self.interrupts[0], self.interrupts[1], self.interrupts[2], self.interrupts[3],
 			self.interrupts[4], self.interrupts[5], self.interrupts[6], self.interrupts[7])
@@ -108,16 +107,25 @@ class RBLHeader:
 
 class ImageHeaderTable:
 
-	def __init__(self, image):		
-		self.image = image
-		self.image.seekTo(0x8c0) # spec say 0x8a0, but it is not true
-		self.version 				   = self.image.readWord() # spec say it should be 0x01010000 but it is 0x10100000
-		self.count_image_headers	   = self.image.readWord()
-		self.offset_partition_header   = self.image.readWord() * 4
-		self.offset_first_image_header = self.image.readWord() * 4
+	def __init__(self, bin_file):		
+		bin_file.seekTo(0x8c0) # spec say 0x8a0, but it is not true
+
+		try:
+			self.version = bin_file.readWord() # spec say it should be 0x01010000 but it is 0x10100000
+			if self.version != 0x10100000:
+				raise ValueError("This is not a ImageHeaderTable")
+
+			self.count_image_headers	   = bin_file.readWord()
+			self.offset_partition_header   = bin_file.readWord() * 4
+			self.offset_first_image_header = bin_file.readWord() * 4
+		except:
+			self.version = 0 # no ImageHeaderTable found, just ignore the rest of the file
+			self.count_image_headers	   = 0
+			self.offset_partition_header   = 0
+			self.offset_first_image_header = 0
 
 	def __str__(self):
-		s = ""
+		s = "<ImageHeaderTable>\n"
 		s += "%s: %x\n" % ("Version", self.version)
 		s += "%s: %x\n" % ("Count Image Headers", self.count_image_headers)
 		s += "%s: %x\n" % ("Offset Partition Header", self.offset_partition_header)
@@ -126,23 +134,45 @@ class ImageHeaderTable:
 
 class ImageHeader:
 
-	def __init__(self, image, offset):		
-		self.image = image
-		self.image.seekTo(offset)
-		self.offset_next_image_header 		= self.image.readWord() * 4
-		self.offset_first_partition_header	= self.image.readWord() * 4
-		self.parition_count					= self.image.readWord()
-		self.image_name_length				= self.image.readWord()
-		self.image_name 					= self.image.readBigEndianString()
+	def __init__(self, bin_file, offset):		
+		bin_file.seekTo(offset)
+		self.offset_next_image_header 		= bin_file.readWord() * 4
+		self.offset_first_partition_header	= bin_file.readWord() * 4
+		self.parition_count					= bin_file.readWord()
+		self.image_name_length				= bin_file.readWord()
+		self.image_name 					= bin_file.readBigEndianString()
 
 	def __str__(self):
-		s = ""
+		s = "<ImageHeader>\n"
 		s += "%s: %x\n" % ("Offset next image header", self.offset_next_image_header)
 		s += "%s: %x\n" % ("Offset first partition count", self.offset_first_partition_header)
 		s += "%s: %x\n" % ("Parition count (not used, must be 0)", self.parition_count)
 		s += "%s: %x\n" % ("Image name length (actual partition count)", self.image_name_length)
 		s += "%s: %s\n" % ("Image name", self.image_name)
-		return s		
+		return s
+
+class BootImage:
+
+	def __init__(self, filename):
+		self.bin_file = BinaryFile(filename)
+		self.boot_rom_header = BootROMHeader(self.bin_file)
+
+		self.image_header_table = ImageHeaderTable(self.bin_file)
+		self.image_header = []
+
+		next_header = self.image_header_table.offset_first_image_header
+
+		while next_header != 0:
+			header = ImageHeader(self.bin_file, next_header)
+			self.image_header.append(header)
+
+			next_header = header.offset_next_image_header
+
+	def __str__(self):
+		if self.image_header_table.version != 0:
+			return "\n".join([str(self.boot_rom_header), str(self.image_header_table)] + [str(x) for x in self.image_header])
+		else:
+			return str(self.boot_rom_header)
 
 if __name__ == "__main__":
 
@@ -150,18 +180,5 @@ if __name__ == "__main__":
 		print >> sys.stderr, "Usage: %s <boot.bin>" % sys.argv[0]
 		sys.exit(1)
 
-	img = Image(sys.argv[1])
-
-	rbl_header = RBLHeader(img)
-	image_header_table = ImageHeaderTable(img)
-
-	print rbl_header
-	print image_header_table
-
-	next_header = image_header_table.offset_first_image_header
-
-	while next_header != 0:
-		image_header = ImageHeader(img, next_header)
-		next_header = image_header.offset_next_image_header
-
-		print image_header
+	boot_image = BootImage(sys.argv[1])
+	print boot_image
