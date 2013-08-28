@@ -88,24 +88,24 @@ class BootROMHeader:
 
 	def __str__(self):
 		s = "<BootROMHeader>\n"
-		s += "%s: %x %x %x %x %x %x %x %x\n" % ("Reserved for Interrupts", 
+		s += "{:45}: {:#010x} {:#010x} {:#010x} {:#010x} {:#010x} {:#010x} {:#010x} {:#010x}\n".format("Reserved for Interrupts", 
 			self.interrupts[0], self.interrupts[1], self.interrupts[2], self.interrupts[3],
 			self.interrupts[4], self.interrupts[5], self.interrupts[6], self.interrupts[7])
-		s += "%s: %x\n" % ("Width Detection", self.width_detection)
-		s += "%s: %x\n" % ("Image Identification", self.image_id)
-		s += "%s: %x\n" % ("Encryption Status", self.encryption_status)
-		s += "%s: %x\n" % ("User Defined", self.user_defined)
-		s += "%s: %x\n" % ("Source Offset", self.source_offset)
-		s += "%s: %x\n" % ("Length of Image", self.length_of_image)
-		s += "%s: %x\n" % ("Start of Execution", self.start_of_execution)
-		s += "%s: %x\n" % ("Total Image Length", self.total_image_length)
-		s += "%s: %x\n" % ("Header Checksum", self.header_checksum)
-		s += "%s:\n" % "Register Initialization:"
+		s += "{:45}: {:#010x}\n".format("Width Detection", self.width_detection)
+		s += "{:45}: {:#010x}\n".format("Image Identification", self.image_id)
+		s += "{:45}: {:#010x}\n".format("Encryption Status", self.encryption_status)
+		s += "{:45}: {:#010x}\n".format("User Defined", self.user_defined)
+		s += "{:45}: {:#010x}\n".format("Source Offset", self.source_offset)
+		s += "{:45}: {:#010x}\n".format("Length of Image", self.length_of_image)
+		s += "{:45}: {:#010x}\n".format("Start of Execution", self.start_of_execution)
+		s += "{:45}: {:#010x}\n".format("Total Image Length", self.total_image_length)
+		s += "{:45}: {:#010x}\n".format("Header Checksum", self.header_checksum)
+		s += "{:45}\n".format("Register Initialization")
 		for reg in self.registers:
 			if reg == (0xffffffff, 0):
-				s += "\t <no more registers>\n"
+				s += "\t<no more registers>\n"
 				break
-			s += "\t%x = %x\n" % reg
+			s += "\t{:#010x} = {:#010x}\n".format(reg)
 		return s
 
 class ImageHeaderTable:
@@ -129,10 +129,10 @@ class ImageHeaderTable:
 
 	def __str__(self):
 		s = "<ImageHeaderTable>\n"
-		s += "%s: %x\n" % ("Version", self.version)
-		s += "%s: %x\n" % ("Count Image Headers", self.count_image_headers)
-		s += "%s: %x\n" % ("Offset Partition Header", self.offset_partition_header)
-		s += "%s: %x\n" % ("Offset First Image Header", self.offset_first_image_header)
+		s += "{:45}: {:#010x}\n".format("Version", self.version)
+		s += "{:45}: {:#010x}\n".format("Count Image Headers", self.count_image_headers)
+		s += "{:45}: {:#010x}\n".format("Offset Partition Header", self.offset_partition_header)
+		s += "{:45}: {:#010x}\n".format("Offset First Image Header", self.offset_first_image_header)
 		return s
 
 class ImageHeader:
@@ -147,11 +147,11 @@ class ImageHeader:
 
 	def __str__(self):
 		s = "<ImageHeader>\n"
-		s += "%s: %x\n" % ("Offset next image header", self.offset_next_image_header)
-		s += "%s: %x\n" % ("Offset first partition count", self.offset_first_partition_header)
-		s += "%s: %x\n" % ("Parition count (not used, must be 0)", self.parition_count)
-		s += "%s: %x\n" % ("Image name length (actual partition count)", self.image_name_length)
-		s += "%s: %s\n" % ("Image name", self.image_name)
+		s += "{:45}: {:#010x}\n".format("Offset next image header", self.offset_next_image_header)
+		s += "{:45}: {:#010x}\n".format("Offset first partition count", self.offset_first_partition_header)
+		s += "{:45}: {:#010x}\n".format("Parition count (not used, must be 0)", self.parition_count)
+		s += "{:45}: {:#010x}\n".format("Image name length (actual partition count)", self.image_name_length)
+		s += "{:45}: {}\n".format("Image name", self.image_name)
 		return s
 
 class BootImage:
