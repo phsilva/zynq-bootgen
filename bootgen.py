@@ -102,6 +102,9 @@ class BootROMHeader:
 		s += "%s: %x\n" % ("Header Checksum", self.header_checksum)
 		s += "%s:\n" % "Register Initialization:"
 		for reg in self.registers:
+			if reg == (0xffffffff, 0):
+				s += "\t <no more registers>\n"
+				break
 			s += "\t%x = %x\n" % reg
 		return s
 
