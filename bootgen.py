@@ -100,12 +100,12 @@ class BootROMHeader:
 		s += "{:45}: {:#010x}\n".format("Start of Execution", self.start_of_execution)
 		s += "{:45}: {:#010x}\n".format("Total Image Length", self.total_image_length)
 		s += "{:45}: {:#010x}\n".format("Header Checksum", self.header_checksum)
-		s += "{:45}\n".format("Register Initialization")
+		s += "{:45} ({:03d}/{:03d})\n".format("Register Initialization", len(filter(lambda x: x[0] != 0xffffffff, self.registers)), 256)
 		for reg in self.registers:
 			if reg == (0xffffffff, 0):
 				s += "\t<no more registers>\n"
 				break
-			s += "\t{:#010x} = {:#010x}\n".format(reg)
+			s += "\t{:#010x} = {:#010x}\n".format(reg[0], reg[1])
 		return s
 
 class ImageHeaderTable:
